@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+
+    <form method="POST"
+        action="{% url 'Pharmacist:product.store' %}"
+        enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label for="category">category :</label>
+                <div class="form-group col-md-12">
+                    <select data-placeholder="Choose item Group..." class="form-select form-control choosen-single-select" name="category" id="category" tabindex="1">                                            
+                        {% for i in category %}
+                        <option value="{{i.id}}" {% if category.category_id and category.category_id == i.id %}selected{% endif %}>{{ i.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            <div class="row">
+                <div class="form-group col-md-6">
+                    <label for="title">title: </label>
+                    <div class="w-100">
+                        <input type="text" class="form-control validation-form-input" id="title" name="title" value="{% if product.title %}{{product.title}}{% endif %}" aria-describedby="emailHelp" placeholder="Full Name">
+                        <small class="text-danger" id="validation-error-message"></small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label for="slug">slug: </label>
+                        <div class="w-100">
+                            <input type="text" class="form-control validation-form-input" id="slug" name="slug" value="{% if product.slug %}{{product.slug}}{% endif %}" aria-describedby="emailHelp" placeholder="Full Name">
+                            <small class="text-danger" id="validation-error-message"></small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label for="marked_price">marked_price: </label>
+                            <div class="w-100">
+                                <input type="text" class="form-control validation-form-input" id="marked_price" name="marked_price" value="{% if product.marked_price %}{{product.marked_price}}{% endif %}" aria-describedby="emailHelp" placeholder="Marked price">
+                                <small class="text-danger" id="validation-error-message"></small>
+                            </div>
+                        </div>
+                    
+                        <div class="row">
+                            <div class="form-group col-md-6">
+                                <label for="marked_price">selling_price: </label>
+                                <div class="w-100">
+                                    <input type="text" class="form-control validation-form-input" id="selling_price" name="selling_price" value="{% if product.selling_price %}{{product.selling_price}}{% endif %}" aria-describedby="emailHelp" placeholder="Selling price">
+                                    <small class="text-danger" id="validation-error-message"></small>
+                                </div>
+                            </div>
+                    
+
+
+
+            <div class="col-md-12">
+                <div class="form-group ml-auto">
+                    <button type="submit" class="btn btn-submit"> 
+                        Submit</button>
+                </div>
+            </div>
+
+
+
+    </form>
+
+</body>
+
+</html>
