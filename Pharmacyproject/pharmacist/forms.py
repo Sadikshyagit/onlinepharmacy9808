@@ -16,3 +16,4 @@ class PharmacistRegistrationForm(forms.ModelForm):
     class Meta:
         model = Pharamcist
         fields = ["username", "password", "email", "pharmacy_name", "address","phone_no","license_number","company_pic"]
+

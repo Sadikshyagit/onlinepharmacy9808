@@ -1,10 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render,HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
 from django.core.paginator import Paginator
 import requests
 import os
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from .utils import password_reset_token
 from django.views.generic import View, TemplateView, CreateView, FormView, DetailView, ListView
@@ -21,6 +22,11 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserChangeForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib import messages
+
 #import requests
 
 
@@ -40,7 +46,7 @@ class HomeView(EcomMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['myname'] = "Dipak Niroula"
+        context['myname'] = "Sadikshya Dhital"
         all_products = Product.objects.all().order_by("-id")
         paginator = Paginator(all_products, 8)
         page_number = self.request.GET.get('page')
@@ -385,10 +391,12 @@ class CustomerRegistrationView(CreateView):
         username = form.cleaned_data.get("username")
         password = form.cleaned_data.get("password")
         email = form.cleaned_data.get("email")
+        cpassword=form.cleaned_data.get("cpassword")
         user = User.objects.create_user(username, email, password)
         form.instance.user = user
         login(self.request, user)
         return super().form_valid(form)
+        
 
     def get_success_url(self):
         if "next" in self.request.GET:
@@ -420,6 +428,9 @@ class CustomerLoginView(FormView):
             return render(self.request, self.template_name, {"form": self.form_class, "error": "Invalid credentials"})
 
         return super().form_valid(form)
+    
+    
+        
 
     def get_success_url(self):
         if "next" in self.request.GET:
@@ -626,31 +637,14 @@ class AdminProductCreateView(AdminRequiredMixin, CreateView):
             ProductImage.objects.create(product=p, image=i)
         return super().form_valid(form)
 
-def sales_chart(request):
-    # Sample data for the bar chart
-    medicine_sales = [10, 15, 8, 12, 5]
-    skincare_sales = [5, 7, 3, 10, 6]
-    days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+def edit_profile(request):
+    customer = request.user.customer
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=customer)
+        if form.is_valid():
+            form.save()
+            return redirect('ecomapp:customerprofile')
+    else:
+        form = EditProfileForm(instance=customer)
 
-    # Plotting the bar chart
-    x = np.arange(len(days))
-    width = 0.35
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width/2, medicine_sales, width, label='Medicine')
-    rects2 = ax.bar(x + width/2, skincare_sales, width, label='Skincare')
-
-    ax.set_xlabel('Days')
-    ax.set_ylabel('Sales')
-    ax.set_title('Sales of Medicine and Skincare')
-    ax.set_xticks(x)
-    ax.set_xticklabels(days)
-    ax.legend()
-
-    # Save the figure to a temporary image file
-    temp_img = 'sales_chart.png'
-    plt.savefig(temp_img)
-    plt.close()
-
-    return render(request, 'sales.html', {'chart_image': 'sales_chart.png'})
-
-
+    return render(request, 'editprofile.html', {'form': form})

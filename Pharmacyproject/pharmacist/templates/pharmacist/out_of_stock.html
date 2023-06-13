@@ -1,0 +1,8 @@
+<h1>Out of Stock Products</h1>
+<ul>
+  {% for product in out_of_stock_products %}
+    <li>{{ product.title }}</li>
+  {% empty %}
+    <li>No out of stock products available.</li>
+  {% endfor %}
+</ul>

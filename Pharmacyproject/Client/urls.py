@@ -58,7 +58,9 @@ urlpatterns = [
          name="adminproductlist"),
     path("admin-product/add/", AdminProductCreateView.as_view(),
          name="adminproductcreate"),
-     path('sales_chart/', sales_chart, name='sales_chart'),
+     path('edit-profile/', edit_profile, name='editprofile'),   
+     
+    
 
 
 ]

@@ -16,9 +16,10 @@ class Admin(models.Model):
 class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=200)
+    # email = models.EmailField()
     address = models.CharField(max_length=200, null=True, blank=True)
     joined_on = models.DateTimeField(auto_now_add=True)
-
+    
     def __str__(self):
         return self.full_name
 
@@ -43,7 +44,7 @@ class Product(models.Model):
     expiry_date = models.DateField(blank=True)
     hex = models.IntegerField(null=True, blank=True)
     view_count = models.PositiveIntegerField(default=0)
-
+    
     def __str__(self):
         return self.title
 
@@ -88,7 +89,7 @@ ORDER_STATUS = (
 METHOD = (
     ("Cash On Delivery", "Cash On Delivery"),
     ("Khalti", "Khalti"),
-    ("Esewa", "Esewa"),
+    
 )
 
 

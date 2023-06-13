@@ -1,12 +1,13 @@
 from django.shortcuts import render
-
 from django.shortcuts import redirect, render
-from Client.models import Product
+from Client.models import Product, Category
 from pharmacist import service
 from django.views.generic import CreateView,FormView
 from pharmacist.forms import PharmacistRegistrationForm,PharmacistLoginForm
 from .models import *
+from pharmacist.service import create_product
 from django.urls import reverse_lazy
+from django.contrib.auth import logout
 from django.contrib.auth import login,authenticate
 
 
@@ -64,39 +65,76 @@ def product_list(request):
     return render(request,'pharmacist/list.html',data)
    
 
-def product_create(request):
-    data={
+# def product_create(request):
+#     data={
         
-        'category':service.productCategory(request)
-    }
-    return render(request,'pharmacist/form.html',data)
+#         'category':service.productCategory(request)
+#     }
+#     return render(request,'pharmacist/add.html',data)
 
+def product_create(request):
+    if request.method == 'POST':
+        create_product(request)
+        return redirect('Pharmacist:product.list')
+    else:
+        category = Category.objects.all()
+        context = {'category': category}
+        return render(request, 'pharmacist/add.html', context)
 
 #view for the list view 
 def product_store(request):
     service.storeProduct(request)
-    return redirect('vendor.list')
+    return redirect('Pharmacist:product.list')
 
-#view for the edit the registration from
-def product_edit(request,id):
-    vendor=service.getproductId(id)
-    
-    data = {
-        'title'  : 'vendor',
-        'vendor':vendor,
-        'category':service.productCategory(request)
-        
-    }
-    return render(request,'vendor/form.html',data)
+# #view for the edit the registration from
+# def product_edit(request,id):
+#     vendor=service.getproductId(id)
+#     data = {
+#         'title'  : 'vendor',
+#         'vendor':vendor,
+#         'category':service.productCategory(request)  
+#     }
+#     return render(request,'vendor/form.html',data) category
+
+def product_edit(request, id):
+    if request.method == 'POST':
+        service.updateproduct(request, id)
+        return redirect('Pharmacist:product.list')
+    else:
+        product = service.getproductId(id)
+        category = Category.objects.all()
+        context = {'product': product, 'category': category}
+        return render(request, 'pharmacist/form.html', context)
 
 
-#view for the update vendor registration from
-def product_update(request,id):
-    service.updateproduct(request, id)
-    return redirect('vendor.list')
+def product_update(request, id):
+    if request.method == 'POST':
+        service.updateproduct(request, id)
+        return redirect('Pharmacist:product.list')
+    else:
+        product = Product.objects.get(id=id)(id)
+        categories = service.getallcategories()
+        return render(request, 'form.html', {'product': product, 'category': categories})
 
 
 #view for the delete registration from
 def product_delete(request,id):
     service.deleteproduct(id)
-    return redirect('vendor.list')
+    return redirect('Pharmacist:product.list')
+
+from Client.models import Order
+
+def admin_orders(request):
+    orders = Order.objects.all()
+    return render(request, 'pharmacist/orders.html', {'orders': orders})
+
+def pharmacist_logout(request):
+    logout(request)
+    return redirect('Pharmacist:pharmacist.login')
+
+def out_of_stock(request):
+    out_of_stock_products = Product.objects.filter(cartproduct__isnull=True)
+    context = {
+        'products': out_of_stock_products,
+    }
+    return render(request, 'pharmacist/out_of_stock.html', context)

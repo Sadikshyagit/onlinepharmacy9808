@@ -43,6 +43,7 @@
                     {% if cart.cartproduct_set.all %}
                     <tr>
                         <th><a class="btn btn-info" href="{% url 'ecomapp:checkout' %}"> Checkout </a></th>
+                        <th><a class="btn btn-info" href="{% url 'ecomapp:allproducts' %}"> Continue shopping </a></th>
                     </tr>
                     {% endif %}
                 </tbody>

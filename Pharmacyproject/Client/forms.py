@@ -1,6 +1,13 @@
 from django import forms
 from .models import Order, Customer, Product
 from django.contrib.auth.models import User
+from django.contrib.auth.password_validation import validate_password
+
+
+class EditProfileForm(forms.ModelForm):
+    class Meta:
+        model = Customer
+        fields = ['full_name','address']
 
 
 class CheckoutForm(forms.ModelForm):
@@ -15,19 +22,38 @@ class CustomerRegistrationForm(forms.ModelForm):
     username = forms.CharField(widget=forms.TextInput())
     password = forms.CharField(widget=forms.PasswordInput())
     email = forms.CharField(widget=forms.EmailInput())
-
+    password = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput,
+        validators=[validate_password]
+    )
+    cpassword = forms.CharField(
+        label="Confirm Password",
+        widget=forms.PasswordInput
+    )
     class Meta:
         model = Customer
-        fields = ["username", "password", "email", "full_name", "address"]
+        fields = ["full_name","username", "password","cpassword", "email",  "address"]
 
     def clean_username(self):
         uname = self.cleaned_data.get("username")
         if User.objects.filter(username=uname).exists():
             raise forms.ValidationError(
                 "Customer with this username already exists.")
-
         return uname
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        cpassword = cleaned_data.get("cpassword")
 
+        if password and cpassword and password != cpassword:
+            self.add_error('cpassword', "Passwords And Conform Password do not match.")
+
+        return cleaned_data
+        
+    
+   
 
 class CustomerLoginForm(forms.Form):
     username = forms.CharField(widget=forms.TextInput())
