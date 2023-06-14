@@ -27,6 +27,9 @@ from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
 
+
+
+
 #import requests
 
 
@@ -496,6 +499,8 @@ class SearchView(TemplateView):
         return context
 
 
+from django.core.exceptions import MultipleObjectsReturned
+
 class PasswordForgotView(FormView):
     template_name = "forgotpassword.html"
     form_class = PasswordForgotForm
@@ -504,30 +509,31 @@ class PasswordForgotView(FormView):
     def form_valid(self, form):
         # get email from user
         email = form.cleaned_data.get("email")
-        print(email)
-        # get current host ip/domain
-        url = self.request.META['HTTP_HOST']
-        print(url)
-        # get customer and then user
-        customer = Customer.objects.get(user__email=email)
-        user = customer.user
-        print(customer)
-        print(user)
-        # send mail to the user with email
-        text_content = 'Please Click the link below to reset your password. '
-        print(text_content)
-        html_content = url + "/password-reset/" + email + \
-            "/" + password_reset_token.make_token(user) + "/"
-        print(html_content)
-        send_mail(
-            'Password Reset | Sajilo Pharmacy',
-            text_content + html_content,
-            settings.EMAIL_HOST_USER,
-            [email],
-            fail_silently=False,
-        )
         
-        return super().form_valid(form)
+        try:
+            # get customer and then user
+            customer = Customer.objects.get(user__email=email)
+            user = customer.user
+            
+            # send mail to the user with email
+            text_content = 'Please Click the link below to reset your password. '
+            html_content = self.request.META['HTTP_HOST'] + "/password-reset/" + email + "/" + password_reset_token.make_token(user) + "/"
+            
+            send_mail(
+                'Password Reset | Sajilo Pharmacy',
+                text_content + html_content,
+                settings.EMAIL_HOST_USER,
+                [email],
+                fail_silently=False,
+            )
+            
+            return super().form_valid(form)
+        
+        except MultipleObjectsReturned:
+            # handle the case where multiple customers have the same email address
+            error_message = "Multiple customers found with the same email address. Please contact support for assistance."
+            form.add_error("email", error_message)
+            return self.form_invalid(form)
 
 
 class PasswordResetView(FormView):
@@ -648,3 +654,43 @@ def edit_profile(request):
         form = EditProfileForm(instance=customer)
 
     return render(request, 'editprofile.html', {'form': form})
+
+from django.shortcuts import get_object_or_404, render
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
+from io import BytesIO
+
+def order_pdf(request, order_id):
+    try:
+        # Retrieve the order from the database
+        order = get_object_or_404(Order, id=order_id)
+
+        # Pass the order to the template
+        context = {
+            'order': order
+        }
+        template = get_template('order_pdf.html')
+        html = template.render(context)
+
+        # Create a file-like buffer to receive PDF data
+        buffer = BytesIO()
+
+        # Convert HTML to PDF
+        pisa.CreatePDF(html, dest=buffer)
+
+        # Get the PDF data from the buffer
+        pdf_data = buffer.getvalue()
+
+        # Close the buffer
+        buffer.close()
+
+        # Return the PDF as a response
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename=order_{order_id}.pdf'
+        response.write(pdf_data)
+        return response
+
+    except Exception as e:
+        # Handle any exceptions that occur
+        return HttpResponse(f'Error: {str(e)}')

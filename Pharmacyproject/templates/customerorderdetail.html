@@ -7,7 +7,14 @@
 <div class="container">
     <div class="row">
         <div class="col-md-8 mx-auto">
-            <h3>Order Detail</h3><hr>
+            <h3>Order Detail</h3>
+            <a href="{% url 'ecomapp:order_pdf' ord_obj.id %}" class="btn btn-primary">
+                <i class="fas fa-download"></i> Download Bill (PDF)
+            </a>
+            
+            <hr>
+
+
             <p><span class="font-weight-bold">Order ID: </span> #ORDER_{{ord_obj.id}}</p>
             <p><span class="font-weight-bold">Order Status: </span> {{ord_obj.order_status}}</p>
             <p><span class="font-weight-bold">Order On: </span> {{ord_obj.created_at}}({{ord_obj.created_at|timesince}} ago)</p>

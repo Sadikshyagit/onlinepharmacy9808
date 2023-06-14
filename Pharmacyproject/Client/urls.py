@@ -4,9 +4,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
+
 app_name = "ecomapp"
 urlpatterns = [
-
     # Client side pages
     path("", HomeView.as_view(), name="home"),
     path("about/", AboutView.as_view(), name="about"),
@@ -58,9 +58,7 @@ urlpatterns = [
          name="adminproductlist"),
     path("admin-product/add/", AdminProductCreateView.as_view(),
          name="adminproductcreate"),
-     path('edit-profile/', edit_profile, name='editprofile'),   
-     
-    
-
+     path('edit-profile/', edit_profile, name='editprofile'),  
+      path('order/<int:order_id>/bill/pdf/', order_pdf, name='order_pdf'),
 
 ]
