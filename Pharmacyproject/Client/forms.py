@@ -48,7 +48,7 @@ class CustomerRegistrationForm(forms.ModelForm):
         cpassword = cleaned_data.get("cpassword")
 
         if password and cpassword and password != cpassword:
-            self.add_error('cpassword', "Passwords And Conform Password do not match.")
+            self.add_error('cpassword', "Passwords And Confirm Password do not match.")
 
         return cleaned_data
         

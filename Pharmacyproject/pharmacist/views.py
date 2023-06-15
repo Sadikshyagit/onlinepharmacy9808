@@ -9,7 +9,7 @@ from pharmacist.service import create_product
 from django.urls import reverse_lazy
 from django.contrib.auth import logout
 from django.contrib.auth import login,authenticate
-
+from django.urls import reverse
 
 
 class PharmacistLoginView(FormView):
@@ -56,7 +56,8 @@ class PharmacistRegistrationView(CreateView):
             next_url = self.request.GET.get("next")
             return next_url
         else:
-            return self.success_url
+            return reverse("Pharmacist:pharmacist.login")
+        
 def product_list(request):
     product = Product.objects.all()
     data = {
@@ -132,9 +133,17 @@ def pharmacist_logout(request):
     logout(request)
     return redirect('Pharmacist:pharmacist.login')
 
-def out_of_stock(request):
-    out_of_stock_products = Product.objects.filter(cartproduct__isnull=True)
-    context = {
-        'products': out_of_stock_products,
-    }
-    return render(request, 'pharmacist/out_of_stock.html', context)
+from django.shortcuts import render
+from django.views.generic import TemplateView
+from Client.models import Product
+
+class OutOfStockView(TemplateView):
+    template_name = 'pharmacist/out_of_stock.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Retrieve out-of-stock products
+        out_of_stock_products = Product.objects.filter(hex=0)
+        context['out_of_stock_products'] = out_of_stock_products
+        return context
+

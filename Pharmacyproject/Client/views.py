@@ -16,22 +16,17 @@ from django.db.models import Q
 from .models import *
 from .forms import *
 from django.shortcuts import render
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib
-matplotlib.use('agg')
-import matplotlib.pyplot as plt
-import numpy as np
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib import messages
+from django.urls import reverse
 
 
 
 
 #import requests
-
 
 class EcomMixin(object):
     def dispatch(self, request, *args, **kwargs):
@@ -41,7 +36,16 @@ class EcomMixin(object):
             if request.user.is_authenticated and request.user.customer:
                 cart_obj.customer = request.user.customer
                 cart_obj.save()
+                self.deduct_hsn(cart_obj)
         return super().dispatch(request, *args, **kwargs)
+
+    def deduct_hsn(self, cart):
+        products = cart.cartproduct_set.all()
+        for cart_product in products:
+            product = cart_product.product
+            if product.hex:
+                product.hex -= 1
+                product.save()
 
 
 class HomeView(EcomMixin, TemplateView):
@@ -187,47 +191,51 @@ class AddToCartView(EcomMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # get product id from requested url
+        # get product id from requested URL
         product_id = self.kwargs['pro_id']
         # get product
         product_obj = Product.objects.get(id=product_id)
 
-        # check if cart exists
-        cart_id = self.request.session.get("cart_id", None)
-        if cart_id:
-            cart_obj = Cart.objects.get(id=cart_id)
-            this_product_in_cart = cart_obj.cartproduct_set.filter(
-                product=product_obj)
+        if product_obj.hex != 0:
+            # check if cart exists
+            cart_id = self.request.session.get("cart_id", None)
+            if cart_id:
+                cart_obj = Cart.objects.get(id=cart_id)
+                this_product_in_cart = cart_obj.cartproduct_set.filter(
+                    product=product_obj)
 
-            # item already exists in cart
-            if this_product_in_cart.exists():
-                cartproduct = this_product_in_cart.last()
-                cartproduct.quantity += 1
-                cartproduct.subtotal += product_obj.selling_price
-                cartproduct.save()
-                cart_obj.total += product_obj.selling_price
-                cart_obj.save()
-            # new item is added in cart
+                # item already exists in cart
+                if this_product_in_cart.exists():
+                    cartproduct = this_product_in_cart.last()
+                    cartproduct.quantity += 1
+                    cartproduct.subtotal += product_obj.selling_price
+                    cartproduct.save()
+                    cart_obj.total += product_obj.selling_price
+                    cart_obj.save()
+                # new item is added in cart
+                else:
+                    cartproduct = CartProduct.objects.create(
+                        cart=cart_obj, product=product_obj, rate=product_obj.selling_price, quantity=1, subtotal=product_obj.selling_price)
+                    cart_obj.total += product_obj.selling_price
+                    cart_obj.save()
+
             else:
+                cart_obj = Cart.objects.create(total=0)
+                self.request.session['cart_id'] = cart_obj.id
                 cartproduct = CartProduct.objects.create(
                     cart=cart_obj, product=product_obj, rate=product_obj.selling_price, quantity=1, subtotal=product_obj.selling_price)
                 cart_obj.total += product_obj.selling_price
                 cart_obj.save()
 
-        else:
-            cart_obj = Cart.objects.create(total=0)
-            self.request.session['cart_id'] = cart_obj.id
-            cartproduct = CartProduct.objects.create(
-                cart=cart_obj, product=product_obj, rate=product_obj.selling_price, quantity=1, subtotal=product_obj.selling_price)
-            cart_obj.total += product_obj.selling_price
-            cart_obj.save()
+            # Set the cart object in the context
+            context['cart'] = cart_obj
 
-        # Set the cart object in the context
-        context['cart'] = cart_obj
+            # Redirect to the my-cart page
+            return redirect("ecomapp:mycart")
 
-        # Return the updated context as a dictionary
-        return context
-
+        # If hex is zero, redirect to the product detail page
+        return redirect("ecomapp:productdetail", slug=product_obj.slug)
+    
     def render_to_response(self, context, **response_kwargs):
         # Redirect to the my-cart page
         return redirect("ecomapp:mycart")
@@ -251,18 +259,20 @@ class CheckoutView(EcomMixin, CreateView):
     template_name = "checkout.html"
     form_class = CheckoutForm
     success_url = reverse_lazy("ecomapp:home")
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        order = Order.objects.get(id=self.request.user.id)  # Retrieve the order object from the database
-        initial_data = {
-            "ordered_by": order.ordered_by,
-            "shipping_address": order.shipping_address,
-            "mobile": order.mobile,
-            "email": order.email,
+    # def get_form_kwargs(self):
+    #     kwargs = super().get_form_kwargs()
+    #     order = Order.objects.get(id=self.request.user.id)  # Retrieve the order object from the database
+    #     initial_data = {
+    #         "ordered_by": order.ordered_by,
+    #         "shipping_address": order.shipping_address,
+    #         "mobile": order.mobile,
+    #         "email": order.email,
             
-        }
-        kwargs['initial'] = initial_data
-        return kwargs
+    #     }
+    #     kwargs['initial'] = initial_data
+    #     return kwargs
+        
+       
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and request.user.customer:
@@ -406,7 +416,7 @@ class CustomerRegistrationView(CreateView):
             next_url = self.request.GET.get("next")
             return next_url
         else:
-            return self.success_url
+             return reverse("ecomapp:customerlogin")
 
 
 class CustomerLogoutView(View):

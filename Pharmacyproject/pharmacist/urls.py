@@ -15,6 +15,5 @@ path('delete/<int:id>',views.product_delete, name= 'product.delete'),
 path("update/<int:id>/", views.product_edit, name="product.update"),
 path('orders/', views.admin_orders, name='admin_orders'),
 path("logout/", LogoutView.as_view(next_page="Pharmacist:pharmacist.login"), name="pharmacist.logout"),
-path('out_of_stock/', views.out_of_stock, name='out_of_stock'),
-
+path('stock/', OutOfStockView.as_view(), name='out_of_stock'),
 ]

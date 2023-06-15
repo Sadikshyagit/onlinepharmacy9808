@@ -12,6 +12,7 @@ class Pharamcist(models.Model):
     company_pic= models.ImageField(upload_to="products")
     joined_on = models.DateTimeField(auto_now_add=True)
     
+   
 
     def str(self):
         return self.full_name
